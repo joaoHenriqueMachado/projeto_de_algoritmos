@@ -4,7 +4,7 @@ import math
 
 '''
     This function receives a graph, its dimension and format, the delivery capacity, the demand and the depots
-    It returns the distance traveled, the routess and the execution time
+    It returns the distance traveled, the load of each truck, the routes and the execution time
 '''
 def greedy_cvrp(graph, dimension, capacity, graph_format, demand, depot):
 
@@ -48,7 +48,8 @@ def greedy_cvrp(graph, dimension, capacity, graph_format, demand, depot):
 
     print(trucks)
     print(points)
-    ''' Estratégia de máxima carga possível
+
+    ''' Estratégia de máxima carga disponível
     trucks = list()
     points = list()
     truck_capacity = capacity
