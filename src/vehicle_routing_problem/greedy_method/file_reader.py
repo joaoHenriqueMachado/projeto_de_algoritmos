@@ -21,11 +21,23 @@ def file_reader (path: str):
                 graph_format = str(file[file.index('EDGE_WEIGHT_FORMAT:') + 1])
             line = list()
 
+            # Grafo de dimensão d^2 zerado
+            for index  in range(dimension):
+                line = list()
+                for jindex in range(dimension):
+                    line.append(0)
+                graph.append(line)
+
             # Creating the graph array
             while file[i] != 'DEMAND_SECTION':
-                line.append(int(file[i]))
-                i+=1
-            graph = line
+                j = 0
+                while j < dimension - 1:
+                    k = j + 1
+                    while k < dimension:
+                        graph[j][k] = graph[k][j] = int(file[i])
+                        k += 1
+                        i += 1
+                    j += 1
             i+=1
 
             # Creating the demand array

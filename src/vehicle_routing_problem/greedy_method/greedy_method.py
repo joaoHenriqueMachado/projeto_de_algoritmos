@@ -7,7 +7,7 @@ import math
     It returns the distance traveled, the load of each truck, the routes and the execution time
 '''
 def greedy_cvrp(graph, dimension, capacity, graph_format, demand, depot):
-
+    start_time = process_time()
     full_demand = 0
     for x in demand:
         full_demand += x
@@ -49,39 +49,44 @@ def greedy_cvrp(graph, dimension, capacity, graph_format, demand, depot):
     print(trucks)
     print(points)
 
-    ''' Estratégia de máxima carga disponível
-    trucks = list()
-    points = list()
-    truck_capacity = capacity
-    points.append(1)
-    while full_demand > 0:
-        max_delivery = 0
-        delivery_index = -1
-        for x in demand:
-            if x > max_delivery and x <= truck_capacity:
-                max_delivery = x
-                delivery_index = demand.index(x)
-        if max_delivery > 0:
-            truck_capacity -= max_delivery
-            full_demand -= max_delivery
-            demand[delivery_index] = 0
-            points.append(delivery_index)
-        else:
-            trucks.append(points)
-            truck_capacity = capacity
-            points = []
-            points.append(1)
-    trucks.append(points)
-    print(trucks)
-    '''
-
     j = 0
     while j < len(trucks):
             trucks[j] = capacity - trucks[j]
             j+=1
 
+    if graph_format == 'LOWER_COL' or graph_format == 'UPPER_ROW':
+        traveled_distance = 0
+        routes = []
+        distance_list = []
+        j = 0
+        while j < points.__len__():     
+            start_position = 0
+            next_index = 0
+            distance = -1
+            route_distance = 0
+            routes.append(list())
+            routes[j].append(0)
+
+            while len(points[j]) > 0:
+                for y in points[j]:
+                    if distance == -1:
+                        distance = graph[start_position][y]
+                    else:
+                        if graph[start_position][y] < distance:
+                            distance = graph[start_position][y]
+                    next_index = points[j].index(y)
+                    points[j].pop(next_index)
+                    routes[j].append(y)
+                    start_position = y
+                    traveled_distance += distance
+                    route_distance += distance
+            traveled_distance += graph[start_position][0]
+            route_distance += graph[start_position][0]
+            routes[j].append(0)
+            distance_list.append(route_distance)
+            j += 1
     # Calculating routes and distances
-    if graph_format == 'EUC_2D':
+    elif graph_format == 'EUC_2D' or graph_format == 'ATT':
         traveled_distance = 0
         routes = []
         distance_list = []
@@ -116,15 +121,14 @@ def greedy_cvrp(graph, dimension, capacity, graph_format, demand, depot):
             routes[j].append(0)
             distance_list.append(route_distance)
             j += 1
-    elif graph_format == 'LOWER_COL': 
-        print("Lower side matrix")
         
-    end_time = process_time()
-    return traveled_distance, trucks, routes, distance_list, end_time - start_time
+    return traveled_distance, trucks, routes, distance_list, process_time() - start_time
 
-start_time = process_time()
+initial_time = process_time()
 
 files = (
+         'lib/CVRP/eil7.vrp/eil7.vrp',
+         'lib/CVRP/eil13.vrp/eil13.vrp',
          'lib/CVRP/eil22.vrp/eil22.vrp',
          'lib/CVRP/eil23.vrp/eil23.vrp',
          'lib/CVRP/eil30.vrp/eil30.vrp',
@@ -153,5 +157,5 @@ for file in files:
     results = greedy_cvrp(data[0], data[1], data[2], data[3], data[4].copy(), data[5])
     output += file.replace('lib/CVRP/', '').replace('.vrp', '') + ':'
     output += f' Total distance traveled: {results[0]}, Truck load: {str(results[1])}, Routes: {str(results[2])}, Individual route distance: {str(results[3])}, Execution time: {results[4]:.30f} s\n'
-    with open('greedy_results.txt', 'w') as output_file:
-        output_file.write('Greedy Output:\n' + output + f'total time:{ (process_time() - start_time)} s')
+with open('greedy_results.txt', 'w') as output_file:
+    output_file.write('Greedy Output:\n' + output + f'total time:{ (process_time() - initial_time)} s')
