@@ -3,9 +3,77 @@ from file_reader import file_reader
 from greedy_method import greedy_cvrp
 import math
 
-def local_search (graph, dimension, capacity, graph_format, demand, depot, distance, routes):
+def getNeighbours(solution):
+    neighbours = []
+    
+    for i in range(1,len(solution)):
+        for j in range(i + 1, len(solution)-1):
+            neighbour = solution.copy()
+            neighbour[i] = solution[j]
+            neighbour[j] = solution[i]
+            neighbours.append(neighbour)
+    
+    return neighbours
+
+def routeLength(graph, solution, graph_format):
+    routeLength = 0
+
+    # Calculating route length for adjacency matrix
+    if graph_format == 'LOWER_COL' or graph_format == 'UPPER_ROW':
+        for i in range(len(solution) - 1):
+            routeLength += graph[solution[i]][solution[i + 1]]
+
+    # Calculating routes for euclidean format
+    elif graph_format == 'EUC_2D' or graph_format == 'ATT':
+        for i in range(len(solution) - 1):
+            routeLength += math.sqrt(pow(graph[solution[i]][0] - graph[solution[i + 1]][0], 2) + 
+                                    pow(graph[solution[i]][1] - graph[solution[i + 1]][1], 2))
+    return routeLength
+
+def getBestNeighbour(graph, neighbours, graph_format):
+    bestRouteLength = routeLength(graph, neighbours[0], graph_format)
+    bestNeighbour = neighbours[0]
+    for neighbour in neighbours:
+        currentRouteLength = routeLength(graph,neighbour, graph_format)
+        if currentRouteLength < bestRouteLength:
+            bestRouteLength = currentRouteLength
+            bestNeighbour = neighbour
+    return bestNeighbour, bestRouteLength
+
+def local_search (graph, dimension, capacity, graph_format, demand, depot, distance, routes, individual_distances):
     start_time = process_time()
-    return process_time() - start_time
+    bestRoutes = routes
+    bestDistance = distance
+    bestIndividualDistance = individual_distances
+    currentRoute = routes
+    currentIndividualDistances = individual_distances  
+
+    # Swap changes after using local search
+    i = 0
+    currentDistance = 0
+    while i < len(currentRoute):
+        # Comparação para rotas com apenas 1 ponto
+        if(len(currentRoute[i]) > 3):
+            neighbours = getNeighbours(currentRoute[i])
+            bestNeighbour, bestNeighbourRouteLength = getBestNeighbour(graph, neighbours, graph_format)
+            iterations = 5000
+            while(currentIndividualDistances[i] <= bestNeighbourRouteLength and iterations > 0):
+                bestNeighbour = currentRoute[i]
+                neighbours = getNeighbours(currentRoute[i])
+                bestNeighbour, bestNeighbourRouteLength = getBestNeighbour(graph, neighbours, graph_format)
+                currentRoute[i] = bestNeighbour
+                iterations -= 1
+            if(currentIndividualDistances[i] > bestNeighbourRouteLength):
+                currentIndividualDistances[i] = bestNeighbourRouteLength
+            currentDistance += currentIndividualDistances[i]
+        i += 1
+
+    if(currentDistance < bestDistance):
+        bestDistance = currentDistance
+        bestRoutes = currentRoute
+        bestIndividualDistance = currentIndividualDistances
+
+    return bestDistance, bestRoutes, bestIndividualDistance, process_time() - start_time
 
 initial_time = process_time()
 
@@ -38,10 +106,17 @@ for file in files:
     print("Depot: " + str(data[5]))
     
     greedy_results = greedy_cvrp(data[0], data[1], data[2], data[3], data[4].copy(), data[5])
+
+    search_results = local_search(data[0], data[1], data[2], data[3], data[4].copy(), data[5],
+    greedy_results[0], greedy_results[2].copy(), greedy_results[3].copy())
+
+    print("\nLocal search results - " + file)
+    print("Distance: " + str(search_results[0]))
+    print("Routes: " + str(search_results[1]))
+    print("Individual Distances: " + str(search_results[2]))
+
     output += file.replace('lib/CVRP/', '').replace('.vrp', '') + ':'
-    output += f' Total distance traveled: {greedy_results[0]}, Truck load: {str(greedy_results[1])}, Routes: {str(greedy_results[2])}, Individual route distance: {str(greedy_results[3])}, Execution time: {greedy_results[4]:.30f} s\n'
+    output += f' Total distance traveled: {search_results[0]}, Routes: {str(search_results[1])}, Individual route distance: {str(search_results[2])}, Execution time: {search_results[3]:.30f} s\n'
 
-    search_results = local_search(data[0], data[1], data[2], data[3], data[4].copy(), data[5], greedy_results[0], greedy_results[2])
-
-with open('greedy_results.txt', 'w') as output_file:
-    output_file.write('Greedy Output:\n' + output + f'total time:{ (process_time() - initial_time)} s')
+with open('local_search_results.txt', 'w') as output_file:
+    output_file.write('Local Search Output:\n' + output + f'total time:{ (process_time() - initial_time)} s')
