@@ -48,7 +48,6 @@ def local_search (graph, dimension, capacity, graph_format, demand, depot, dista
     currentRoute = routes
     currentIndividualDistances = individual_distances  
 
-    # Swap changes after using local search
     i = 0
     currentDistance = 0
     while i < len(currentRoute):
